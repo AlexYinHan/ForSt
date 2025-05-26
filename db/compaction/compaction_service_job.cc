@@ -75,7 +75,8 @@ CompactionJob::ProcessKeyValueCompactionWithCompactionService(
   CompactionServiceJobInfo info(dbname_, db_id_, db_session_id_,
                                 GetCompactionId(sub_compact), thread_pri_);
   CompactionServiceJobStatus compaction_status =
-      db_options_.compaction_service->StartV2(info, compaction_input_binary);
+      db_options_.compaction_service->StartV2(info, compaction_input_binary,
+                                              compaction_input.input_files);
   switch (compaction_status) {
     case CompactionServiceJobStatus::kSuccess:
       break;
@@ -167,7 +168,8 @@ CompactionJob::ProcessKeyValueCompactionWithCompactionService(
 
   for (const auto& file : compaction_result.output_files) {
     uint64_t file_num = versions_->NewFileNumber();
-    auto src_file = compaction_result.output_path + "/" + file.file_name;
+    auto src_file =
+        compaction_result.output_path + "/" + file.file_name + ".compaction";
     auto tgt_file = TableFileName(compaction->immutable_options()->cf_paths,
                                   file_num, compaction->output_path_id());
     s = fs_->RenameFile(src_file, tgt_file, IOOptions(), nullptr);
