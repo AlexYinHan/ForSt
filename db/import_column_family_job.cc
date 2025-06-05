@@ -329,16 +329,17 @@ Status ImportColumnFamilyJob::GetIngestedFileInfo(
   // TODO(yuzhangyu): User-defined timestamps doesn't support importing column
   //  family. Pass in the correct `user_defined_timestamps_persisted` flag for
   //  creating `TableReaderOptions` when the support is there.
-  status = cfd_->ioptions()->table_factory->NewTableReader(
-      TableReaderOptions(
-          *cfd_->ioptions(), sv->mutable_cf_options.prefix_extractor,
+  TableReaderOptions tro(*cfd_->ioptions(), sv->mutable_cf_options.prefix_extractor,
           env_options_, cfd_->internal_comparator(),
           sv->mutable_cf_options.block_protection_bytes_per_key,
           /*skip_filters*/ false, /*immortal*/ false,
           /*force_direct_prefetch*/ false, /*level*/ -1,
           /*block_cache_tracer*/ nullptr,
           /*max_file_size_for_l0_meta_pin*/ 0, versions_->DbSessionId(),
-          /*cur_file_num*/ new_file_number),
+          /*cur_file_num*/ new_file_number);
+  tro.ignore_index_reader = true;
+  status = cfd_->ioptions()->table_factory->NewTableReader(
+      tro,
       std::move(sst_file_reader), file_to_import->file_size, &table_reader);
   if (!status.ok()) {
     return status;
