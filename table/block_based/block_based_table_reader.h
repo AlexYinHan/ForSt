@@ -112,7 +112,8 @@ class BlockBasedTable : public TableReader {
       size_t max_file_size_for_l0_meta_pin = 0,
       const std::string& cur_db_session_id = "", uint64_t cur_file_num = 0,
       UniqueId64x2 expected_unique_id = {},
-      const bool user_defined_timestamps_persisted = true);
+      const bool user_defined_timestamps_persisted = true,
+      const bool ignore_index_reader = false);
 
   bool PrefixRangeMayMatch(const Slice& internal_key,
                            const ReadOptions& read_options,
@@ -497,7 +498,7 @@ class BlockBasedTable : public TableReader {
       InternalIterator* meta_iter, BlockBasedTable* new_table,
       bool prefetch_all, const BlockBasedTableOptions& table_options,
       const int level, size_t file_size, size_t max_file_size_for_l0_meta_pin,
-      BlockCacheLookupContext* lookup_context);
+      BlockCacheLookupContext* lookup_context, const bool ignore_index_reader = false);
 
   static BlockType GetBlockTypeForMetaBlockByName(const Slice& meta_block_name);
 

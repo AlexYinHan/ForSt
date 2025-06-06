@@ -43,7 +43,8 @@ struct TableReaderOptions {
       size_t _max_file_size_for_l0_meta_pin = 0,
       const std::string& _cur_db_session_id = "", uint64_t _cur_file_num = 0,
       UniqueId64x2 _unique_id = {}, SequenceNumber _largest_seqno = 0,
-      uint64_t _tail_size = 0, bool _user_defined_timestamps_persisted = true)
+      uint64_t _tail_size = 0, bool _user_defined_timestamps_persisted = true,
+      bool _ignore_index_reader = false)
       : ioptions(_ioptions),
         prefix_extractor(_prefix_extractor),
         env_options(_env_options),
@@ -60,7 +61,13 @@ struct TableReaderOptions {
         unique_id(_unique_id),
         block_protection_bytes_per_key(_block_protection_bytes_per_key),
         tail_size(_tail_size),
-        user_defined_timestamps_persisted(_user_defined_timestamps_persisted) {}
+        user_defined_timestamps_persisted(_user_defined_timestamps_persisted),
+        ignore_index_reader(_ignore_index_reader) {}
+
+  TableReaderOptions(const TableReaderOptions&) = delete;
+  TableReaderOptions(TableReaderOptions&&) = delete;
+  TableReaderOptions& operator=(const TableReaderOptions&) = delete;
+  TableReaderOptions& operator=(TableReaderOptions&&) = delete;
 
   const ImmutableOptions& ioptions;
   const std::shared_ptr<const SliceTransform>& prefix_extractor;
@@ -97,6 +104,8 @@ struct TableReaderOptions {
 
   // Whether the key in the table contains user-defined timestamps.
   bool user_defined_timestamps_persisted;
+
+  bool ignore_index_reader;
 };
 
 struct TableBuilderOptions {

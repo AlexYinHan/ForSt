@@ -581,7 +581,8 @@ Status BlockBasedTable::Open(
     BlockCacheTracer* const block_cache_tracer,
     size_t max_file_size_for_l0_meta_pin, const std::string& cur_db_session_id,
     uint64_t cur_file_num, UniqueId64x2 expected_unique_id,
-    const bool user_defined_timestamps_persisted) {
+    const bool user_defined_timestamps_persisted,
+    const bool ignore_index_reader) {
   table_reader->reset();
 
   Status s;
@@ -785,7 +786,7 @@ Status BlockBasedTable::Open(
   s = new_table->PrefetchIndexAndFilterBlocks(
       ro, prefetch_buffer.get(), metaindex_iter.get(), new_table.get(),
       prefetch_all, table_options, level, file_size,
-      max_file_size_for_l0_meta_pin, &lookup_context);
+      max_file_size_for_l0_meta_pin, &lookup_context, ignore_index_reader);
 
   if (s.ok()) {
     // Update tail prefetch stats
@@ -1023,7 +1024,8 @@ Status BlockBasedTable::PrefetchIndexAndFilterBlocks(
     InternalIterator* meta_iter, BlockBasedTable* new_table, bool prefetch_all,
     const BlockBasedTableOptions& table_options, const int level,
     size_t file_size, size_t max_file_size_for_l0_meta_pin,
-    BlockCacheLookupContext* lookup_context) {
+    BlockCacheLookupContext* lookup_context,
+    const bool ignore_index_reader) {
   // Find filter handle and filter type
   if (rep_->filter_policy) {
     auto name = rep_->filter_policy->CompatibilityName();
@@ -1160,15 +1162,18 @@ Status BlockBasedTable::PrefetchIndexAndFilterBlocks(
   // depending on prepopulate_block_cache option
   const bool prefetch_index = prefetch_all || pin_index;
 
-  std::unique_ptr<IndexReader> index_reader;
-  s = new_table->CreateIndexReader(ro, prefetch_buffer, meta_iter, use_cache,
+  if (!ignore_index_reader) {
+    std::unique_ptr<IndexReader> index_reader;
+    s = new_table->CreateIndexReader(ro, prefetch_buffer, meta_iter, use_cache,
                                    prefetch_index, pin_index, lookup_context,
                                    &index_reader);
-  if (!s.ok()) {
-    return s;
-  }
 
-  rep_->index_reader = std::move(index_reader);
+    if (!s.ok()) {
+      return s;
+    }
+
+    rep_->index_reader = std::move(index_reader);
+  }
 
   // The partitions of partitioned index are always stored in cache. They
   // are hence follow the configuration for pin and prefetch regardless of
